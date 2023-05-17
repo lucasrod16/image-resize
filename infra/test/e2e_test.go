@@ -2,6 +2,7 @@ package infra
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"os"
 	"testing"
@@ -33,7 +34,7 @@ func TestLambdaFunctionEndToEnd(t *testing.T) {
 
 	imageData, err := os.ReadFile(testImage)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
 	s3Client := myLambda.SetupS3Client()
@@ -66,7 +67,7 @@ func TestLambdaFunctionEndToEnd(t *testing.T) {
 	// Convert the struct to JSON
 	jsonPayload, err := json.Marshal(s3Event)
 	if err != nil {
-		t.Fatalf("Error marshaling JSON: %v", err)
+		t.Errorf("Error marshaling JSON: %v", err)
 	}
 
 	session := session.Must(session.NewSession(&aws.Config{
@@ -80,13 +81,24 @@ func TestLambdaFunctionEndToEnd(t *testing.T) {
 	invocationResult, err := lambdaClient.Invoke(&lambda.InvokeInput{
 		FunctionName: aws.String(lambdaFunctionName),
 		Payload:      jsonPayload,
+		LogType:      aws.String("Tail"),
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
 	// Ensure that the lambda function didn't return any errors
 	if invocationResult.FunctionError != nil {
-		t.Fatalf("Lambda function returned an error: %v", *invocationResult.FunctionError)
+		t.Errorf("Lambda function returned an error: %v", *invocationResult.FunctionError)
 	}
+
+	encodedLogString := aws.StringValue(invocationResult.LogResult)
+
+	// Decode the base64-encoded log string
+	logBytes, err := base64.StdEncoding.DecodeString(encodedLogString)
+	if err != nil {
+		t.Error(err)
+	}
+
+	t.Logf("Lambda function logs:\n\n%s\n\n", string(logBytes))
 }
