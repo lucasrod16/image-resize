@@ -43,3 +43,10 @@ jobs:
 
       - name: Run E2E Tests
         run: make test-e2e
+
+      - name: Final Teardown
+        if: always()
+        run: |
+          cd infra || exit
+          terraform init
+          terraform destroy --auto-approve
