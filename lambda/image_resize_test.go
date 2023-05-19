@@ -1,6 +1,8 @@
 package lambda
 
 import (
+	"bytes"
+	"image/jpeg"
 	"os"
 	"testing"
 
@@ -55,8 +57,24 @@ func TestResizeImage(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err = ResizeImage(imageData); err != nil {
+	resizedImageBytes, err := ResizeImage(imageData)
+	if err != nil {
 		t.Error(err)
+	}
+
+	resizedImage, err := jpeg.Decode(bytes.NewReader(resizedImageBytes))
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Check the dimensions of the resized image
+	resizedWidth := resizedImage.Bounds().Dx()
+	resizedHeight := resizedImage.Bounds().Dy()
+	expectedWidth := 800
+	expectedHeight := 600
+
+	if resizedWidth != expectedWidth || resizedHeight != expectedHeight {
+		t.Errorf("image is not resized to the expected dimensions. Got %dx%d, expected %dx%d", resizedWidth, resizedHeight, expectedWidth, expectedHeight)
 	}
 }
 
