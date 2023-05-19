@@ -35,5 +35,5 @@ test-unit: ## Run unit tests
 	go test -count=1 -v ./lambda
 
 .PHONY: test-e2e
-test-e2e: ## Run e2e tests
+test-e2e: build-image push-image ## Run e2e tests
 	infra/test/e2e_test.sh
