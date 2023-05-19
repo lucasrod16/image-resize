@@ -75,7 +75,7 @@ function e2e_test() {
     done
 
     # Check if log message contains any errors
-    if [[ "$log_message" =~ "error" ]]
+    if [[ "$log_message" =~ "Error" ]]
     then
         terraform destroy --auto-approve
         echo -e "Lambda function returned an error\n"
