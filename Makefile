@@ -36,4 +36,4 @@ test-unit: ## Run unit tests
 
 .PHONY: test-e2e
 test-e2e: ## Run e2e tests
-	go test -count=1 -v ./infra/test
+	infra/test/e2e_test.sh
