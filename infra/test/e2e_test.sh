@@ -1,6 +1,9 @@
 #!/bin/bash
 
 function delete_log_streams() {
+    GREEN='\033[0;32m'
+    RED='\033[0;31m'
+
     log_group_name="/aws/lambda/$1"
 
     # Get all log streams in the log group
@@ -12,7 +15,7 @@ function delete_log_streams() {
     # Loop through each log stream and delete it
     for log_stream in $log_streams
     do
-        echo "Deleting log stream: $log_stream"
+        echo -e "Deleting log stream: $log_stream\n"
 
         aws logs delete-log-stream \
             --log-group-name "$log_group_name" \
@@ -30,9 +33,9 @@ function e2e_test() {
     terraform apply --auto-approve
 
     upload_s3_bucket="$(terraform output -raw upload_s3_bucket_name)"
-    # resize_s3_bucket="$(terraform output -raw resize_s3_bucket_name)"
+    resize_s3_bucket="$(terraform output -raw resize_s3_bucket_name)"
     lambda_function="$(terraform output -raw lambda_function_name)"
-    # dynamodb_table="$(terraform output -raw dynamodb_table_name)"
+    dynamodb_table="$(terraform output -raw dynamodb_table_name)"
 
     # Delete old log streams
     delete_log_streams "$lambda_function"
@@ -78,14 +81,67 @@ function e2e_test() {
     if [[ "$log_message" =~ "Error" ]]
     then
         terraform destroy --auto-approve
-        echo -e "Lambda function returned an error\n"
-        echo "$log_message"
+        echo -e "${RED}Lambda function returned an error\n"
+        echo "$log_message${RED}"
+        exit 1
+    fi
+
+    image_metadata_payload="$(aws dynamodb scan --table-name "$dynamodb_table")"
+
+    # Check if we got any errors
+    if [ $? -ne 0 ]
+    then
+        terraform destroy --auto-approve
+        echo -e "${RED}Error: Failed to fetch data from the '$dynamodb_table' DynamoDB table\n"
+        echo -e "Ensure the requested DynamoDB table name is valid\n${RED}"
+        exit 1
+    fi
+
+    # Assert upload S3 bucket name
+    actual_upload_bucket_name="$(echo "$image_metadata_payload" | jq -r '.Items[].sourceBucketName.S')"
+    if [ "$actual_upload_bucket_name" != "$upload_s3_bucket" ]
+    then
+        terraform destroy --auto-approve
+        echo -e "${RED}Error: The upload S3 bucket name does not match metadata in DynamoDB\n"
+        echo -e "expected: '$upload_s3_bucket', got: '$actual_upload_bucket_name'\n${RED}"
+        exit 1
+    fi
+
+    # Assert upload image name
+    expected_upload_image_name="test.jpg"
+    actual_upload_image_name="$(echo "$image_metadata_payload" | jq -r '.Items[].sourceImageName.S')"
+    if [ "$actual_upload_image_name" != "$expected_upload_image_name" ]
+    then
+        terraform destroy --auto-approve
+        echo -e "${RED}Error: The upload image name does not match metadata in DynamoDB\n"
+        echo -e "expected: '$expected_upload_image_name', got: '$actual_upload_image_name'\n${RED}"
+        exit 1
+    fi
+
+    # Assert resize S3 bucket name
+    actual_resize_bucket_name="$(echo "$image_metadata_payload" | jq -r '.Items[].targetBucketName.S')"
+    if [ "$actual_resize_bucket_name" != "$resize_s3_bucket" ]
+    then
+        terraform destroy --auto-approve
+        echo -e "${RED}Error: The resize S3 bucket name does not match metadata in DynamoDB\n"
+        echo -e "expected: '$resize_s3_bucket', got: '$actual_resize_bucket_name'\n${RED}"
+        exit 1
+    fi
+
+    # Assert resized image name
+    expected_resized_image_name="resized-test.jpg"
+    actual_resized_image_name="$(echo "$image_metadata_payload" | jq -r '.Items[].resizedImageName.S')"
+    if [ "$actual_resized_image_name" != "$expected_resized_image_name" ]
+    then
+        terraform destroy --auto-approve
+        echo -e "${RED}Error: The resized image name does not match metadata in DynamoDB\n"
+        echo -e "expected: '$expected_resized_image_name', got: '$actual_resized_image_name'\n${RED}"
         exit 1
     fi
 
     terraform destroy --auto-approve
 
-    echo "$log_message"
+    echo -e "${GREEN}$log_message\n${GREEN}"
 }
 
 e2e_test

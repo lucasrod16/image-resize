@@ -1,3 +1,9 @@
+###################################################################
+
+# Infrastructure for AWS Lambda function
+
+###################################################################
+
 resource "aws_kms_key" "s3_key" {
   description             = "KMS key used to encrypt bucket objects"
   enable_key_rotation     = true
