@@ -91,8 +91,6 @@ func TestUploadResizedImageToBucket(t *testing.T) {
 
 		// We only need the resize image S3 bucket and the S3 KMS key
 		Targets: []string{"aws_kms_key.s3_key", "module.resize_s3_bucket"},
-
-		// VarFiles: []string{"example.tfvars"},
 	}
 
 	terraform.InitAndApply(t, terraformOptions)
@@ -119,8 +117,6 @@ func TestWriteMetadataToDynamoDBTable(t *testing.T) {
 
 		// We only need the DynamoDB table and the DynamoDB KMS key
 		Targets: []string{"aws_kms_key.dynamodb_key", "aws_dynamodb_table.image_metadata"},
-
-		// VarFiles: []string{"example.tfvars"},
 	}
 
 	terraform.InitAndApply(t, terraformOptions)
