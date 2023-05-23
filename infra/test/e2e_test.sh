@@ -23,8 +23,15 @@ function delete_log_streams() {
     done
 }
 
+function destroy() {
+    terraform destroy --auto-approve
+}
+
 function e2e_test() {
     cd infra || exit
+
+    # Ensure 'terraform destroy' is always executed
+    trap destroy EXIT SIGINT SIGTERM
 
     test_image="../testdata/test.jpg"
 
@@ -35,7 +42,6 @@ function e2e_test() {
     # Check if we got any errors
     if [ $? -ne 0 ]
     then
-        terraform destroy --auto-approve
         echo -e "${RED}Error: 'terraform apply' exited with an error\n${RED}"
         exit 1
     fi
@@ -93,7 +99,6 @@ function e2e_test() {
     # Check if log message contains any errors
     if [[ "$log_message" =~ "Error" || "$log_message" =~ "errorMessage" ]]
     then
-        terraform destroy --auto-approve
         echo -e "${RED}Lambda function returned an error\n"
         echo "$log_message${RED}"
         exit 1
@@ -104,7 +109,6 @@ function e2e_test() {
     # Check if we got any errors
     if [ $? -ne 0 ]
     then
-        terraform destroy --auto-approve
         echo -e "${RED}Error: Failed to fetch data from the '$dynamodb_table' DynamoDB table\n"
         echo -e "Ensure the requested DynamoDB table name is valid\n${RED}"
         exit 1
@@ -114,7 +118,6 @@ function e2e_test() {
     actual_upload_bucket_name="$(echo "$image_metadata_payload" | jq -r '.Items[].sourceBucketName.S')"
     if [ "$actual_upload_bucket_name" != "$upload_s3_bucket" ]
     then
-        terraform destroy --auto-approve
         echo -e "${RED}Error: The upload S3 bucket name does not match metadata in DynamoDB\n"
         echo -e "expected: '$upload_s3_bucket', got: '$actual_upload_bucket_name'\n${RED}"
         exit 1
@@ -125,7 +128,6 @@ function e2e_test() {
     actual_upload_image_name="$(echo "$image_metadata_payload" | jq -r '.Items[].sourceImageName.S')"
     if [ "$actual_upload_image_name" != "$expected_upload_image_name" ]
     then
-        terraform destroy --auto-approve
         echo -e "${RED}Error: The upload image name does not match metadata in DynamoDB\n"
         echo -e "expected: '$expected_upload_image_name', got: '$actual_upload_image_name'\n${RED}"
         exit 1
@@ -135,7 +137,6 @@ function e2e_test() {
     actual_resize_bucket_name="$(echo "$image_metadata_payload" | jq -r '.Items[].targetBucketName.S')"
     if [ "$actual_resize_bucket_name" != "$resize_s3_bucket" ]
     then
-        terraform destroy --auto-approve
         echo -e "${RED}Error: The resize S3 bucket name does not match metadata in DynamoDB\n"
         echo -e "expected: '$resize_s3_bucket', got: '$actual_resize_bucket_name'\n${RED}"
         exit 1
@@ -146,15 +147,12 @@ function e2e_test() {
     actual_resized_image_name="$(echo "$image_metadata_payload" | jq -r '.Items[].resizedImageName.S')"
     if [ "$actual_resized_image_name" != "$expected_resized_image_name" ]
     then
-        terraform destroy --auto-approve
         echo -e "${RED}Error: The resized image name does not match metadata in DynamoDB\n"
         echo -e "expected: '$expected_resized_image_name', got: '$actual_resized_image_name'\n${RED}"
         exit 1
     fi
 
-    terraform destroy --auto-approve
-
-    echo -e "${GREEN}$log_message\n${GREEN}"
+    echo -e "${GREEN}Lambda function executed succesfully\n\n$log_message\n${GREEN}"
 }
 
 e2e_test
