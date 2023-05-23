@@ -73,13 +73,13 @@ A `dev` stage is created to deploy the API, and the deployment is triggered by c
 
 ## Tests
 
-## Unit tests
+### Unit tests
 
 There are unit tests in the `lambda/image_resize_test.go` file.
 
 They are test cases ran in parallel against the terraform module to test the individual Go functions that make up the core business logic of the AWS Lambda function.
 
-## End-To-End tests
+### End-To-End tests
 
 There are end-to-end tests in the `infra/test/e2e_test.sh` file.
 
