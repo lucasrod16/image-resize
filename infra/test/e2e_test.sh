@@ -1,9 +1,9 @@
 #!/bin/bash
 
-function delete_log_streams() {
-    GREEN='\033[0;32m'
-    RED='\033[0;31m'
+GREEN='\033[0;32m'
+RED='\033[0;31m'
 
+function delete_log_streams() {
     log_group_name="/aws/lambda/$1"
 
     # Get all log streams in the log group
@@ -32,16 +32,29 @@ function e2e_test() {
 
     terraform apply --auto-approve
 
+    # Check if we got any errors
+    if [ $? -ne 0 ]
+    then
+        terraform destroy --auto-approve
+        echo -e "${RED}Error: 'terraform apply' exited with an error\n${RED}"
+        exit 1
+    fi
+
+    # Get terraform outputs
     upload_s3_bucket="$(terraform output -raw upload_s3_bucket_name)"
     resize_s3_bucket="$(terraform output -raw resize_s3_bucket_name)"
     lambda_function="$(terraform output -raw lambda_function_name)"
     dynamodb_table="$(terraform output -raw dynamodb_table_name)"
+    invoke_url="$(terraform output -raw invoke_url)"
 
     # Delete old log streams
     delete_log_streams "$lambda_function"
 
-    # Upload image to S3 bucket to trigger the lambda function
-    aws s3 cp "$test_image" s3://"$upload_s3_bucket"
+    # Upload image to S3 bucket to trigger the lambda function.
+    # Using the REST API '/images' endpoint to upload the image.
+    response="$(curl -s -X PUT -H "Content-Type: image/jpeg" --data-binary "@$test_image" "$invoke_url")"
+
+    echo -e "API response: $response\n"
 
     # Wait for log stream to be created
     log_stream="[]"
@@ -78,7 +91,7 @@ function e2e_test() {
     done
 
     # Check if log message contains any errors
-    if [[ "$log_message" =~ "Error" ]]
+    if [[ "$log_message" =~ "Error" || "$log_message" =~ "errorMessage" ]]
     then
         terraform destroy --auto-approve
         echo -e "${RED}Lambda function returned an error\n"

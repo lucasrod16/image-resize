@@ -38,8 +38,12 @@ test-unit: ## Run unit tests
 test-e2e: build-image push-image ## Run e2e tests
 	infra/test/e2e_test.sh
 
+.PHONY: fmt
+fmt: ## Format terraform code
+	cd infra || exit && terraform fmt
+
 .PHONY: init
-init: ## Initialize terraform
+init: fmt ## Initialize terraform
 	cd infra || exit && terraform init 
 
 .PHONY: apply
@@ -49,3 +53,7 @@ apply: init ## Create infrastructure defined in the terraform module
 .PHONY: destroy
 destroy: ## Destroy infrastructure defined in the terraform module
 	cd infra || exit && terraform destroy --auto-approve
+
+.PHONY: plan
+plan: ## Run 'terraform plan'
+	cd infra || exit && terraform plan
