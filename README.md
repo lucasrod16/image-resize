@@ -1,6 +1,6 @@
 # Image resize Lambda function
 
-This provided repository contains Go code in `main.go` and the `lambda/` directory that creates an AWS Lambda function that performs image resizing and processing. Here's an overview of its functionality:
+This repository contains Go code in `main.go` and the `lambda/` directory that creates an AWS Lambda function that performs image resizing and processing. Here's an overview of its functionality:
 
 1. The Lambda function is triggered by an S3 event, indicating that an image has been uploaded to an S3 bucket.
 
@@ -22,7 +22,7 @@ This code can be deployed as an AWS Lambda function to automatically resize and 
 
 ## Infrastructure for AWS Lambda function
 
-This repository contains Terraform code in the 'infra/' directory to provision the infrastructure required for an AWS Lambda function that performs image resizing.
+This repository contains Terraform code in the `infra/` directory to provision the infrastructure required for an AWS Lambda function that performs image resizing.
 
 It includes the following resources:
 
@@ -87,12 +87,14 @@ It is a comprehensive smoke test of all of the infrastructure defined in this re
 
 It performs the following steps:
 
-- Provisions all of the cloud infrastructure
+1. Provisions all of the cloud infrastructure.
 
-- Uploads the JPEG image at `testdata/test.jpg` to S3 to trigger the Lambda function.
+2. Uploads the JPEG image at `testdata/test.jpg` to S3 to trigger the Lambda function.
 
-  - The image is uploaded via a PUT request to the newly created REST API `/images` endpoint.
+   - The image is uploaded via a PUT request to the newly created REST API `/images` endpoint.
 
-- Asserts that the Lambda function executes successfully
+3. Asserts that the Lambda function executes successfully.
 
-- Asserts that the metadata written to DynamoDB matches what is expected.
+4. Asserts that the metadata written to DynamoDB matches what is expected.
+
+5. Tears down all of the cloud infrastructure.
