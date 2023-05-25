@@ -1,16 +1,16 @@
 #!/bin/bash
 
-GREEN='\033[0;32m'
-RED='\033[0;31m'
+GREEN="\033[0;32m"
+RED="\033[0;31m"
 
 function delete_log_streams() {
     log_group_name="/aws/lambda/$1"
 
     # Get all log streams in the log group
-    log_streams=$(aws logs describe-log-streams \
+    log_streams="$(aws logs describe-log-streams \
         --log-group-name "$log_group_name" \
         --query 'logStreams[*].logStreamName' \
-        --output text)
+        --output text)"
 
     # Loop through each log stream and delete it
     for log_stream in $log_streams
@@ -69,11 +69,11 @@ function e2e_test() {
         echo "Waiting for log stream to be created..."
 
         log_stream="$(aws logs describe-log-streams \
-        --log-group-name /aws/lambda/"$lambda_function" \
-        --order-by LastEventTime \
-        --descending \
-        --max-items 1 \
-        | jq -r '.logStreams')"
+            --log-group-name /aws/lambda/"$lambda_function" \
+            --order-by LastEventTime \
+            --descending \
+            --max-items 1 \
+            | jq -r '.logStreams')"
 
         sleep 1
     done
@@ -88,10 +88,10 @@ function e2e_test() {
         echo "Waiting for lambda function to finish executing..."
 
         log_message="$(aws logs get-log-events \
-        --log-group-name /aws/lambda/"$lambda_function" \
-        --log-stream-name "$log_stream_name" \
-        --limit 10 \
-        | jq -r '.events[].message')"
+            --log-group-name /aws/lambda/"$lambda_function" \
+            --log-stream-name "$log_stream_name" \
+            --limit 10 \
+            | jq -r '.events[].message')"
 
         sleep 1
     done
