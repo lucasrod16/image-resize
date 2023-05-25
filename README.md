@@ -1,6 +1,6 @@
 # Image resize Lambda function
 
-This repository contains Go code in `main.go` and the `lambda/` directory that creates an AWS Lambda function that performs image resizing and processing. Here's an overview of its functionality:
+This repository contains Go code in `main.go` and the `lambda/` directory that creates an AWS Lambda function that performs image resizing. Here's an overview of its functionality:
 
 1. The Lambda function is triggered by an S3 event, indicating that an image has been uploaded to an S3 bucket.
 
@@ -16,19 +16,17 @@ This repository contains Go code in `main.go` and the `lambda/` directory that c
 
 The Lambda function utilizes environment variables to specify the source bucket, target bucket, and DynamoDB table name.
 
-The Lambda function is packaged and deployed as a container.
-
-This code can be deployed as an AWS Lambda function to automatically resize and process images as they are uploaded to the source S3 bucket.
+It is packaged and deployed as a container.
 
 ## Infrastructure for AWS Lambda function
 
-This repository contains Terraform code in the `infra/` directory to provision the infrastructure required for an AWS Lambda function that performs image resizing.
+This repository contains Terraform code in the `infra/` directory to provision the infrastructure required for the AWS Lambda function.
 
 It includes the following resources:
 
 ### AWS KMS Keys
 
-Two AWS KMS keys are created to encrypt sensitive data at rest:
+Two AWS KMS keys are created to encrypt data at rest:
 
 1. KMS key used to encrypt S3 bucket objects.
 2. KMS key used to encrypt DynamoDB table data.
@@ -63,9 +61,11 @@ The Lambda function is also configured to be invoked by the upload S3 bucket. Th
 
 ### API Gateway REST API
 
-The repository also provisions an API Gateway REST API for image uploading and resizing.
+The Terraform code also provisions an API Gateway REST API.
 
-The API has an endpoint `/images` with a `PUT` method. The method is integrated with S3 to store uploaded images in the S3 bucket.
+The API has an `/images` endpoint defined and allows `PUT` operations. It is integrated with S3 to store uploaded images in the S3 bucket.
+
+This is necessary so that users don't have direct access to S3 in AWS. They can use the REST API to upload images, and the API handles uploading the image to the S3 bucket.
 
 API Gateway assumes an IAM role with permissions to upload to S3.
 
@@ -77,7 +77,7 @@ A `dev` stage is created to deploy the API, and the deployment is triggered by c
 
 There are unit tests in the `lambda/image_resize_test.go` file.
 
-They are test cases ran in parallel against the terraform module to test the individual Go functions that make up the core business logic of the AWS Lambda function.
+They are test cases ran in parallel against the Terraform module to test the individual Go functions that make up the core business logic of the AWS Lambda function.
 
 ### End-To-End tests
 
