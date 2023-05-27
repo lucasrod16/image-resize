@@ -1,0 +1,28 @@
+openapi: 3.0.0
+info:
+  title: imageResizer API
+  description: Image Resize API
+  version: 0.0.1
+paths:
+  /images:
+    put:
+      summary: Upload an image
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      x-amazon-apigateway-integration:
+        httpMethod: PUT
+        type: aws
+        uri: arn:aws:apigateway:us-east-1:s3:path/${upload_s3_bucket}/test.jpg
+        credentials: ${api_gateway_role_arn}

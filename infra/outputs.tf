@@ -20,5 +20,5 @@ output "dynamodb_table_name" {
 
 # Output the URL used to upload the image via the '/images' API endpoint.
 output "invoke_url" {
-  value = "${aws_api_gateway_deployment.dev_deployment.invoke_url}${aws_api_gateway_stage.dev.stage_name}/${aws_api_gateway_resource.images.path_part}"
+  value = "${aws_api_gateway_deployment.dev_deployment.invoke_url}${aws_api_gateway_stage.dev.stage_name}/images"
 }

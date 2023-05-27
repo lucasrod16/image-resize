@@ -35,7 +35,7 @@ function e2e_test() {
 
     test_image="../testdata/test.jpg"
 
-    terraform init
+    terraform init --upgrade
 
     terraform apply --auto-approve
 

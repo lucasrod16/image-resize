@@ -290,35 +290,14 @@ resource "aws_api_gateway_rest_api" "image_resizer" {
   name        = "imageResizer"
   description = "Image Resize API"
 
+  body = templatefile("${path.module}/openAPI.template.yaml", {
+    api_gateway_role_arn = aws_iam_role.api_gateway_role.arn
+    upload_s3_bucket     = module.upload_s3_bucket.s3_bucket_id
+  })
+
   binary_media_types = [
     "image/jpeg"
   ]
-}
-
-# Create the 'images' endpoint.
-resource "aws_api_gateway_resource" "images" {
-  rest_api_id = aws_api_gateway_rest_api.image_resizer.id
-  parent_id   = aws_api_gateway_rest_api.image_resizer.root_resource_id
-  path_part   = "images"
-}
-
-# Create a PUT method for the 'images' endpoint for uploading images.
-resource "aws_api_gateway_method" "images_post_method" {
-  rest_api_id   = aws_api_gateway_rest_api.image_resizer.id
-  resource_id   = aws_api_gateway_resource.images.id
-  http_method   = "PUT"
-  authorization = "NONE"
-}
-
-# Create an integration with S3.
-resource "aws_api_gateway_integration" "s3_integration" {
-  rest_api_id             = aws_api_gateway_rest_api.image_resizer.id
-  resource_id             = aws_api_gateway_resource.images.id
-  http_method             = aws_api_gateway_method.images_post_method.http_method
-  type                    = "AWS"
-  integration_http_method = "PUT"
-  uri                     = "arn:aws:apigateway:us-east-1:s3:path/${module.upload_s3_bucket.s3_bucket_id}/test.jpg"
-  credentials             = aws_iam_role.api_gateway_role.arn
 }
 
 # Create IAM role for API Gateway to assume to upload to S3.
@@ -355,12 +334,4 @@ resource "aws_api_gateway_stage" "dev" {
 # Deploy the REST API.
 resource "aws_api_gateway_deployment" "dev_deployment" {
   rest_api_id = aws_api_gateway_rest_api.image_resizer.id
-
-  triggers = {
-    redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.images,
-      aws_api_gateway_method.images_post_method,
-      aws_api_gateway_integration.s3_integration,
-    ]))
-  }
 }
